@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd 
 import yfinance as yf
+import requests
+from io import StringIO
 # market index data use
 #structure like functions
 
@@ -10,18 +12,26 @@ import yfinance as yf
 def marketindex_close(ticker, start_date, end_date):
     """
     Download fallback close-price data from Market Index.
-    ticker should NOT include .AX
+    Uses fake user to avoid 403 error as marketindex blocks non-browser user agents
     """
+    # This section doesnt work as marketindex still blocks the request, so need manual download
     url = f"https://www.marketindex.com.au/download-historical-data/{ticker}"
-    df = pd.read_csv(url)
-    # clean columns
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0 Safari/537.36"
+        )
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    df = pd.read_csv(StringIO(response.text))
     df.columns = [c.strip() for c in df.columns]
-    # convert date
     df["Date"] = pd.to_datetime(df["Date"])
-    # set index
     df = df.set_index("Date")
     df = df.loc[start_date:end_date]
-    # keep only close
+    df = df.sort_index()
+    # keeps only close because only data needed
     close = df["Close"]
     return close
 
@@ -33,8 +43,6 @@ def get_data_returns(tickers, start_date, end_date):
     )
     data["Close"] = data["Close"].ffill()
     data["Volume"] = data["Volume"].fillna(0)
-    returns = data["Close"].pct_change()
-    returns = returns.replace([np.inf, -np.inf], np.nan)
     # check each ticker for missing close data
     for t in tickers:
         # if missing data, use marketindex csv as fallback
@@ -53,8 +61,10 @@ def get_data_returns(tickers, start_date, end_date):
                     fallback_close
                 )
             except Exception as e:
-                print(f"Fallback failed for {t}: {e}")
-        return data, returns
+                print(f"Fallback failed for {t}: {e} - Visit https://www.marketindex.com.au/download-historical-data/{mi_ticker} to manually download csv and add to data folder")
+    returns = data["Close"].pct_change()
+    returns = returns.replace([np.inf, -np.inf], np.nan)
+    return data, returns
  
 
 # Load and clean factor exposure data from Fama French Data Library
