@@ -190,7 +190,7 @@ def run_risk_model(tickers, indicator, industry_map):
         residuals_n = {}
 
         for stock in tickers:
-            ind_col = industry_map[stock]
+            ind_col = industry_ff_map[industry_map[stock]]
             y = stock_excess[stock].dropna()
             X = pd.concat([
                 ff_factors[['Mkt-RF', 'SMB', 'HML']],
@@ -209,7 +209,7 @@ def run_risk_model(tickers, indicator, industry_map):
         print("\n=== R² ===")
         print(r_sq_n.round(4))
 
-        used_industries = list(set(industry_map.values()))
+        used_industries = list(set(industry_ff_map[ind] for ind in industry_map.values()))
         factor_ret = pd.concat([ff_factors, ind_ret_all[used_industries]], axis=1)
         F = factor_ret.cov()
         print("\n=== Factor Covariance Matrix ===")
@@ -263,3 +263,29 @@ def run_risk_model(tickers, indicator, industry_map):
 
     else:
         raise ValueError("indicator must be 0 or 1")
+    
+
+industry_ff_map = {
+    "Industrials": "Manuf",
+    "Healthcare": "Hlth",
+    "Tech": "HiTec",
+    "Financials": "Other",   # approximation
+    "Energy": "Other",       # approximation
+    "Materials": "Manuf"     # approximation
+}
+
+if __name__ == "__main__":
+    industry_map = {
+    "PLY.AX": "Industrials",
+    "LAU.AX": "Industrials",
+    "TLX.AX": "Healthcare",
+    "COS.AX": "Industrials",
+    "ANG.AX": "Energy",
+    "VVA.AX": "Financials",
+    "WTC.AX": "Tech",
+    "AUB.AX": "Financials",
+    "XYZ.AX": "Materials",
+    "DUG.AX": "Energy"
+}
+    stocks =["PLY.AX", "LAU.AX", "TLX.AX", "COS.AX", "ANG.AX", "VVA.AX", "WTC.AX", "AUB.AX", "XYZ.AX", "DUG.AX"]
+    run_risk_model(stocks, 0, industry_map)
