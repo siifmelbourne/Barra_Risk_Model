@@ -70,14 +70,14 @@ def get_data_returns(tickers, start_date, end_date):
 # Load and clean factor exposure data from Fama French Data Library
 def load_factors(s, e, returns):
     f3_data = pd.read_csv(
-        'C:/Users/tiany/OneDrive/Attachments/Barra_Risk_Model/Asia_Pacific_ex_Japan_3_Factors_Daily.csv',
+        'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Asia_Pacific_ex_Japan_3_Factors_Daily_CSV.zip',
         skiprows=6,
         skipfooter=1,
         engine="python"
     )
 
     mom = pd.read_csv(
-        'C:/Users/tiany/OneDrive/Attachments/Barra_Risk_Model/Asia_Pacific_ex_Japan_MOM_Factor_Daily.csv',
+        'https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/Asia_Pacific_ex_Japan_MOM_Factor_Daily_CSV.zip',
         skiprows=6,
         skipfooter=1,
         engine="python")
@@ -150,20 +150,13 @@ def run_factor_regression(x, excess):
 
 # Risk decomposition 
 def risk_decompos(w, B, B_matrix, F, D):
-    factor_risk = w.T @ B_matrix @ F.values @ B_matrix.T @ w
-    idio_risk = w.T @ D @ w
-    total_risk = factor_risk + idio_risk
-
-    print("\nFactor Risk:", factor_risk)
-    print("Idiosyncratic Risk:", idio_risk)
-    print("Total Risk:", total_risk)
     F_matrix = F.values
     factor_risk = w.T @ B_matrix @ F_matrix @ B_matrix.T @ w
     idio_risk = w.T @ D @ w
     total_risk = factor_risk + idio_risk
-    print("Factor Risk:", factor_risk)
-    print("Idiosyncratic Risk:", idio_risk)
-    print("Total Risk:", total_risk, "\n")
+    #print("Factor Risk:", factor_risk)
+    #print("Idiosyncratic Risk:", idio_risk)
+    #print("Total Risk:", total_risk, "\n")
 
     #decomposing volatility:
     factor_var = w.T @ B @ F @ B.T @ w
@@ -172,9 +165,15 @@ def risk_decompos(w, B, B_matrix, F, D):
     factor_vol = np.sqrt(factor_var)
     idio_vol = np.sqrt(idio_var_port)
     total_vol = np.sqrt(total_var)
+    print("=== Risk Decomposition ===")
+    print("=== Daily Volatility ===")
     print("Factor Volatility:", factor_vol)
     print("Idiosyncratic Volatility:", idio_vol)
     print("Total Portfolio Volatility:", total_vol)
+    print("==== Annualized Volatility (x sqrt(252)) ====")
+    print("Factor Volatility:", factor_vol * np.sqrt(252))
+    print("Idiosyncratic Volatility:", idio_vol * np.sqrt(252))
+    print("Total Portfolio Volatility:", total_vol * np.sqrt(252))
 
     return factor_risk, idio_risk, total_risk
 
